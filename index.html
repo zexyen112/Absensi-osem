@@ -1,0 +1,793 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#08090D">
+  <meta name="description" content="MPK OSIS Attendance System">
+  <title>MPK OSIS | Attendance System</title>
+
+  <!-- FONT -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+
+  <!-- LIBRARY -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+
+<body>
+
+  <!-- LOADING -->
+  <div id="app-loading" class="loading-screen">
+    <div class="loader"></div>
+    <p>Memuat MPK OSIS...</p>
+  </div>
+
+  <!-- APPLICATION -->
+  <div id="app" class="app-shell hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <div class="brand">
+
+        <!-- LOGO MPK DAN OSIS -->
+        <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+
+          <div style="width:42px; height:42px; background:#fff; border-radius:9px; padding:3px; display:flex; align-items:center; justify-content:center;">
+            <img
+              src="assets/logo-osis.png"
+              alt="Logo MPK"
+              style="width:100%; height:100%; object-fit:contain;"
+            >
+          </div>
+
+          <div style="width:42px; height:42px; background:#fff; border-radius:9px; padding:3px; display:flex; align-items:center; justify-content:center;">
+            <img
+              src="assets/logo-mpk.png"
+              alt="Logo OSIS"
+              style="width:100%; height:100%; object-fit:contain;"
+            >
+          </div>
+
+        </div>
+
+        <div>
+          <strong>MPK OSIS</strong>
+          <small>ATTENDANCE SYSTEM</small>
+        </div>
+
+      </div>
+
+      <!-- NAVIGATION -->
+      <nav class="nav-menu">
+
+        <button type="button" class="nav-link active" data-page="dashboard">
+          <span>▦</span> Dashboard
+        </button>
+
+        <button type="button" class="nav-link" data-page="scanner">
+          <span>▣</span> QR Scanner
+        </button>
+
+        <button type="button" class="nav-link" data-page="members">
+          <span>♙</span> Data Anggota
+        </button>
+
+        <button type="button" class="nav-link" data-page="qrcodes">
+          <span>▧</span> QR Anggota
+        </button>
+
+        <button type="button" class="nav-link" data-page="attendance">
+          <span>✓</span> Ketidakhadiran
+        </button>
+
+        <button type="button" class="nav-link" data-page="archive">
+          <span>▤</span> Arsip & Laporan
+        </button>
+
+        <button type="button" class="nav-link" data-page="account">
+          <span>⚙</span> Pengaturan Akun
+        </button>
+
+      </nav>
+
+      <!-- SIDEBAR BOTTOM -->
+      <div class="sidebar-bottom">
+
+        <div class="account-mini">
+          <div class="avatar">A</div>
+
+          <div>
+            <b id="side-email">Akun</b>
+            <small>Petugas</small>
+          </div>
+        </div>
+
+        <button type="button" id="logout-btn" class="logout-btn">
+          Keluar ↗
+        </button>
+
+      </div>
+
+    </aside>
+
+    <!-- MAIN AREA -->
+    <main class="main-area">
+
+      <!-- TOPBAR -->
+      <header class="topbar">
+
+        <div>
+          <p class="eyebrow">MPK OSIS / MANAGEMENT</p>
+          <h1 id="page-title">Dashboard</h1>
+        </div>
+
+        <div class="top-actions">
+          <span class="secure-pill">● Sistem aktif</span>
+
+          <button type="button" id="mobile-logout" class="mobile-logout">
+            Keluar
+          </button>
+        </div>
+
+      </header>
+
+      <!-- TOOLBAR -->
+      <section class="toolbar">
+
+        <label class="field compact">
+          <span>Kegiatan aktif</span>
+          <select id="event-select"></select>
+        </label>
+
+        <button type="button" id="new-event-btn" class="btn btn-secondary">
+          ＋ Kegiatan
+        </button>
+
+      </section>
+
+      <!-- DASHBOARD -->
+      <section id="page-dashboard" class="page">
+
+        <div class="welcome-panel">
+
+          <div>
+            <p class="eyebrow">RINGKASAN KEGIATAN</p>
+            <h2>Selamat datang di sistem absensi.</h2>
+            <p>Kelola kehadiran anggota MPK OSIS dalam satu tempat.</p>
+          </div>
+
+          <!-- LOGO DI RINGKASAN KEGIATAN -->
+          <div
+            class="welcome-icon"
+            style="display:flex; align-items:center; justify-content:center; gap:10px; background:transparent; box-shadow:none;"
+          >
+
+            <img
+              src="assets/logo-mpk.png"
+              alt="Logo OSIS"
+              style="width:55px; height:55px; object-fit:contain; background:#fff; padding:4px; border-radius:10px;"
+            >
+
+          </div>
+
+        </div>
+
+        <!-- STATISTIK -->
+        <div class="stats-grid">
+
+          <article class="stat-card">
+            <span>Total anggota</span>
+            <strong id="stat-total">0</strong>
+            <small>Anggota terdaftar</small>
+          </article>
+
+          <article class="stat-card">
+            <span>Hadir</span>
+            <strong id="stat-present">0</strong>
+            <small>Hasil scan QR</small>
+          </article>
+
+          <article class="stat-card">
+            <span>Izin</span>
+            <strong id="stat-permission">0</strong>
+            <small>Dengan keterangan</small>
+          </article>
+
+          <article class="stat-card">
+            <span>Sakit</span>
+            <strong id="stat-sick">0</strong>
+            <small>Dengan keterangan</small>
+          </article>
+
+          <article class="stat-card">
+            <span>Alfa</span>
+            <strong id="stat-absent">0</strong>
+            <small>Tanpa keterangan</small>
+          </article>
+
+        </div>
+
+        <!-- AKTIVITAS TERBARU -->
+        <div class="content-card">
+
+          <div class="section-heading">
+
+            <div>
+              <p class="eyebrow">AKTIVITAS TERBARU</p>
+              <h3>Absensi terbaru</h3>
+            </div>
+
+            <button type="button" class="text-btn" data-go="archive">
+              Lihat arsip →
+            </button>
+
+          </div>
+
+          <div class="table-wrap">
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Anggota</th>
+                  <th>Status</th>
+                  <th>Waktu</th>
+                  <th>Dicatat oleh</th>
+                </tr>
+              </thead>
+
+              <tbody id="recent-body">
+                <tr>
+                  <td colspan="4" class="empty">Belum ada data.</td>
+                </tr>
+              </tbody>
+            </table>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- QR SCANNER -->
+      <section id="page-scanner" class="page hidden">
+
+        <div class="two-column">
+
+          <div class="content-card">
+
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">LIVE SCANNER</p>
+                <h3>Pindai QR anggota</h3>
+                <p class="muted">
+                  Hanya petugas yang login yang dapat memindai QR.
+                </p>
+              </div>
+            </div>
+
+            <div id="reader" class="reader"></div>
+
+            <div class="button-row">
+
+              <button type="button" id="start-scan" class="btn btn-primary">
+                Mulai kamera
+              </button>
+
+              <button type="button" id="stop-scan" class="btn btn-secondary">
+                Hentikan
+              </button>
+
+            </div>
+
+            <div id="scan-result" class="notice">
+              Pilih kegiatan aktif, lalu mulai pemindaian.
+            </div>
+
+          </div>
+
+          <div class="content-card">
+
+            <p class="eyebrow">PETUNJUK</p>
+            <h3>Alur absensi</h3>
+
+            <ol class="steps">
+              <li>Pastikan kegiatan yang benar dipilih.</li>
+              <li>Anggota menunjukkan QR pribadinya.</li>
+              <li>Petugas mengarahkan kamera ke QR.</li>
+              <li>Sistem memvalidasi dan menyimpan kehadiran.</li>
+            </ol>
+
+            <div class="info-box">
+              QR tidak berisi nama atau nomor anggota.
+              Validasi dilakukan oleh database.
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- DATA ANGGOTA -->
+      <section id="page-members" class="page hidden">
+
+        <div class="content-card">
+
+          <div class="section-heading">
+
+            <div>
+              <p class="eyebrow">MEMBER DIRECTORY</p>
+              <h3>Data anggota</h3>
+            </div>
+
+            <button type="button" id="add-member-btn" class="btn btn-primary">
+              ＋ Tambah anggota
+            </button>
+
+          </div>
+
+          <div class="filter-row">
+
+            <input
+              type="search"
+              id="member-search"
+              placeholder="Cari nama atau nomor anggota..."
+            >
+
+            <span id="member-count" class="muted"></span>
+
+          </div>
+
+          <div class="table-wrap">
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Nama</th>
+                  <th>Nomor anggota</th>
+                  <th>Komisi</th>
+                  <th>Jabatan</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+
+              <tbody id="members-body"></tbody>
+            </table>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- QR ANGGOTA -->
+      <section id="page-qrcodes" class="page hidden">
+
+        <div class="content-card">
+
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">MEMBER QR</p>
+              <h3>QR anggota</h3>
+              <p class="muted">
+                Buat atau perbarui QR unik anggota.
+              </p>
+            </div>
+          </div>
+
+          <div class="filter-row">
+            <input
+              type="search"
+              id="qr-search"
+              placeholder="Cari anggota..."
+            >
+          </div>
+
+          <div id="qr-grid" class="qr-grid"></div>
+
+        </div>
+
+      </section>
+
+      <!-- KETIDAKHADIRAN -->
+      <section id="page-attendance" class="page hidden">
+
+        <div class="content-card">
+
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">MANUAL ATTENDANCE</p>
+              <h3>Catat ketidakhadiran</h3>
+              <p class="muted">
+                Digunakan untuk anggota yang tidak melakukan scan QR.
+              </p>
+            </div>
+          </div>
+
+          <form id="absence-form" class="form-grid">
+
+            <label class="field">
+              <span>Anggota</span>
+              <select id="absence-member" required></select>
+            </label>
+
+            <label class="field">
+              <span>Status</span>
+              <select id="absence-status" required>
+                <option value="izin">Izin</option>
+                <option value="sakit">Sakit</option>
+                <option value="alfa">Alfa</option>
+              </select>
+            </label>
+
+            <label class="field full">
+              <span>Alasan / keterangan</span>
+              <textarea
+                id="absence-reason"
+                rows="3"
+                placeholder="Tuliskan keterangan (opsional untuk Alfa)"
+              ></textarea>
+            </label>
+
+            <div class="full">
+              <button type="submit" class="btn btn-primary">
+                Simpan ketidakhadiran
+              </button>
+            </div>
+
+          </form>
+
+        </div>
+
+      </section>
+
+      <!-- ARSIP -->
+      <section id="page-archive" class="page hidden">
+
+        <div class="content-card">
+
+          <div class="section-heading">
+
+            <div>
+              <p class="eyebrow">ATTENDANCE RECORDS</p>
+              <h3>Arsip absensi</h3>
+            </div>
+
+            <button type="button" id="export-btn" class="btn btn-secondary">
+              Unduh CSV
+            </button>
+
+          </div>
+
+          <div class="filter-row">
+
+            <input
+              type="search"
+              id="archive-search"
+              placeholder="Cari nama anggota..."
+            >
+
+            <input type="date" id="archive-date">
+
+            <select id="archive-status">
+              <option value="">Semua status</option>
+              <option value="hadir">Hadir</option>
+              <option value="izin">Izin</option>
+              <option value="sakit">Sakit</option>
+              <option value="alfa">Alfa</option>
+            </select>
+
+          </div>
+
+          <div class="table-wrap">
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Tanggal</th>
+                  <th>Anggota</th>
+                  <th>Status</th>
+                  <th>Alasan</th>
+                  <th>Waktu</th>
+                  <th>Dicatat oleh</th>
+                </tr>
+              </thead>
+
+              <tbody id="archive-body"></tbody>
+            </table>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- PENGATURAN AKUN -->
+      <section id="page-account" class="page hidden">
+
+        <!-- INFORMASI AKUN -->
+        <div class="content-card">
+
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">ACCOUNT SETTINGS</p>
+              <h3>Pengaturan akun</h3>
+              <p class="muted">
+                Informasi akun operator yang sedang digunakan.
+              </p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <label class="field full">
+              <span>Email akun</span>
+              <input id="account-email" type="email" readonly>
+            </label>
+          </div>
+
+        </div>
+
+        <!-- UBAH PASSWORD -->
+        <div class="content-card">
+
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">SECURITY</p>
+              <h3>Ubah password</h3>
+              <p class="muted">
+                Gunakan password baru minimal 8 karakter.
+              </p>
+            </div>
+          </div>
+
+          <form id="account-password-form" class="form-grid">
+
+            <label class="field full">
+              <span>Password baru</span>
+              <input
+                id="account-password"
+                type="password"
+                minlength="8"
+                autocomplete="new-password"
+                placeholder="Masukkan password baru"
+                required
+              >
+            </label>
+
+            <label class="field full">
+              <span>Konfirmasi password baru</span>
+              <input
+                id="account-password-confirm"
+                type="password"
+                minlength="8"
+                autocomplete="new-password"
+                placeholder="Ulangi password baru"
+                required
+              >
+            </label>
+
+            <div class="full">
+              <button type="submit" class="btn btn-primary">
+                Simpan password baru
+              </button>
+            </div>
+
+          </form>
+
+        </div>
+
+        <!-- KELUAR AKUN -->
+        <div class="content-card">
+
+          <p class="eyebrow">SESSION</p>
+          <h3>Keluar dari akun</h3>
+
+          <p class="muted">
+            Akhiri sesi login pada perangkat ini.
+          </p>
+
+          <button
+            type="button"
+            id="account-logout"
+            class="btn btn-secondary"
+          >
+            Keluar dari akun
+          </button>
+
+        </div>
+
+      </section>
+
+      <!-- FOOTER -->
+      <footer class="footer">
+
+        <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-bottom:12px;">
+
+          <img
+            src="assets/logo-osis.png"
+            alt="Logo MPK"
+            loading="lazy"
+            style="width:38px; height:38px; object-fit:contain; background:#fff; padding:3px; border-radius:7px;"
+          >
+
+          <img
+            src="assets/logo-mpk.png"
+            alt="Logo OSIS"
+            loading="lazy"
+            style="width:38px; height:38px; object-fit:contain; background:#fff; padding:3px; border-radius:7px;"
+          >
+
+        </div>
+
+        MPK OSIS Attendance System
+        <span>•</span>
+        Secure member attendance
+
+      </footer>
+
+    </main>
+
+  </div>
+
+  <!-- DIALOG TAMBAH ANGGOTA -->
+  <dialog id="member-dialog" class="modal">
+
+    <form id="member-form" method="dialog">
+
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">MEMBER DATA</p>
+          <h3 id="member-dialog-title">Tambah anggota</h3>
+        </div>
+
+        <button type="button" class="icon-btn" data-close="member-dialog">
+          ×
+        </button>
+      </div>
+
+      <input type="hidden" id="member-id">
+
+      <label class="field">
+        <span>Nama lengkap</span>
+        <input id="member-name" required maxlength="100">
+      </label>
+
+      <label class="field">
+        <span>Nomor anggota</span>
+        <input id="member-code" required maxlength="40">
+      </label>
+
+      <label class="field">
+        <span>Komisi / bidang</span>
+        <input id="member-commission" maxlength="80">
+      </label>
+
+      <label class="field">
+        <span>Jabatan</span>
+        <input id="member-position" maxlength="80">
+      </label>
+
+      <label class="check-line">
+        <input type="checkbox" id="member-active" checked>
+        Anggota aktif
+      </label>
+
+      <div class="modal-actions">
+
+        <button type="button" class="btn btn-secondary" data-close="member-dialog">
+          Batal
+        </button>
+
+        <button type="submit" class="btn btn-primary">
+          Simpan anggota
+        </button>
+
+      </div>
+
+    </form>
+
+  </dialog>
+
+  <!-- DIALOG KEGIATAN -->
+  <dialog id="event-dialog" class="modal">
+
+    <form id="event-form" method="dialog">
+
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">ATTENDANCE SESSION</p>
+          <h3>Buat kegiatan</h3>
+        </div>
+
+        <button type="button" class="icon-btn" data-close="event-dialog">
+          ×
+        </button>
+      </div>
+
+      <label class="field">
+        <span>Nama kegiatan</span>
+        <input id="event-name" required maxlength="120">
+      </label>
+
+      <label class="field">
+        <span>Tanggal kegiatan</span>
+        <input id="event-date" type="date" required>
+      </label>
+
+      <div class="modal-actions">
+
+        <button type="button" class="btn btn-secondary" data-close="event-dialog">
+          Batal
+        </button>
+
+        <button type="submit" class="btn btn-primary">
+          Buat kegiatan
+        </button>
+
+      </div>
+
+    </form>
+
+  </dialog>
+
+  <!-- DIALOG QR -->
+  <dialog id="qr-dialog" class="modal qr-modal">
+
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">PERSONAL QR</p>
+        <h3 id="qr-dialog-name">QR anggota</h3>
+      </div>
+
+      <button type="button" class="icon-btn" data-close="qr-dialog">
+        ×
+      </button>
+    </div>
+
+    <div id="qr-output" class="qr-output"></div>
+
+    <p class="muted center">
+      Simpan atau cetak QR ini untuk anggota.
+    </p>
+
+    <div class="modal-actions">
+
+      <button type="button" id="download-qr" class="btn btn-primary">
+        Unduh QR
+      </button>
+
+      <button type="button" class="btn btn-secondary" data-close="qr-dialog">
+        Tutup
+      </button>
+
+    </div>
+
+  </dialog>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast"></div>
+
+  <!-- JAVASCRIPT -->
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/members.js"></script>
+  <script src="js/qrcode.js"></script>
+  <script src="js/scanner.js"></script>
+  <script src="js/attendance.js"></script>
+  <script src="js/archive.js"></script>
+
+</body>
+</html>

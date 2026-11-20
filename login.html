@@ -1,0 +1,236 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#08090D">
+
+    <title>Login | OSIS MPK</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/login.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body class="login-body">
+
+    <main class="login-wrap">
+
+        <section class="login-card">
+
+            <div class="brand login-brand">
+
+                <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+
+                    <div style="width:48px; height:48px; background:#fff; border-radius:9px; padding:3px; display:flex; align-items:center; justify-content:center;">
+                        <img
+                            src="assets/logo-osis.png"
+                            alt="Logo OSIS"
+                            style="width:100%; height:100%; object-fit:contain;"
+                        >
+                    </div>
+
+                    <div style="width:48px; height:48px; background:#fff; border-radius:9px; padding:3px; display:flex; align-items:center; justify-content:center;">
+                        <img
+                            src="assets/logo-mpk.png"
+                            alt="Logo MPK"
+                            style="width:100%; height:100%; object-fit:contain;"
+                        >
+                    </div>
+
+                </div>
+
+                <div>
+                    <strong>OSIS MPK</strong>
+                    <small>ATTENDANCE SYSTEM</small>
+                </div>
+
+            </div>
+
+            <p class="eyebrow">SECURE ACCESS</p>
+
+            <h1>Masuk ke akun</h1>
+
+            <p class="muted">
+                Gunakan akun petugas yang telah dibuat oleh pengelola.
+            </p>
+
+            <form id="login-form">
+
+                <label class="field">
+                    <span>Email</span>
+
+                    <input
+                        id="email"
+                        type="email"
+                        autocomplete="username"
+                        required
+                        placeholder="nama@email.com"
+                    >
+                </label>
+
+                <label class="field">
+                    <span>Password</span>
+
+                    <input
+                        id="password"
+                        type="password"
+                        autocomplete="current-password"
+                        required
+                        placeholder="Masukkan password"
+                    >
+                </label>
+
+                <button
+                    class="btn btn-primary login-submit"
+                    type="submit"
+                >
+                    Masuk <span>→</span>
+                </button>
+
+                <p
+                    id="login-error"
+                    class="error-text"
+                    role="alert"
+                    aria-live="polite"
+                ></p>
+
+            </form>
+
+            <div class="login-note">
+                Akses terbatas untuk maksimal 5 akun petugas.
+            </div>
+
+        </section>
+
+        <p class="login-footer">
+            OSIS MPK • Attendance System
+        </p>
+
+    </main>
+
+    <script src="js/config.js"></script>
+
+    <script>
+    "use strict";
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        var form = document.getElementById("login-form");
+        var emailInput = document.getElementById("email");
+        var passwordInput = document.getElementById("password");
+        var errorElement = document.getElementById("login-error");
+
+        var button = form.querySelector('button[type="submit"]');
+
+        var originalButtonHTML = 'Masuk <span>→</span>';
+        var processing = false;
+
+        // MEMERIKSA KONFIGURASI
+        if (!window.supabaseClient) {
+            errorElement.textContent =
+                "Koneksi Supabase belum tersedia. Periksa konfigurasi.";
+
+            button.disabled = true;
+            return;
+        }
+
+        // MEMERIKSA SESI LOGIN
+        async function checkSession() {
+            try {
+                var result =
+                    await window.supabaseClient.auth.getSession();
+
+                if (result.error) {
+                    throw result.error;
+                }
+
+                if (result.data.session) {
+                    location.replace("index.html");
+                }
+
+            } catch (error) {
+                console.error("Pemeriksaan sesi gagal:", error);
+
+                errorElement.textContent =
+                    "Gagal memeriksa sesi. Silakan muat ulang halaman.";
+            }
+        }
+
+        checkSession();
+
+        // PROSES LOGIN
+        form.addEventListener("submit", async function (event) {
+
+            event.preventDefault();
+
+            if (processing) return;
+
+            var email = emailInput.value.trim();
+            var password = passwordInput.value;
+
+            if (!email || !password) {
+                errorElement.textContent =
+                    "Email dan password wajib diisi.";
+                return;
+            }
+
+            processing = true;
+
+            button.disabled = true;
+            button.textContent = "Memproses...";
+
+            errorElement.textContent = "";
+
+            try {
+
+                var result =
+                    await window.supabaseClient.auth.signInWithPassword({
+                        email: email,
+                        password: password
+                    });
+
+                if (result.error) {
+                    throw result.error;
+                }
+
+                if (!result.data || !result.data.session) {
+                    throw new Error(
+                        "Login gagal. Sesi pengguna tidak ditemukan."
+                    );
+                }
+
+                location.replace("index.html");
+
+            } catch (error) {
+
+                console.error("Login gagal:", error);
+
+                errorElement.textContent =
+                    "Email atau password salah, atau login gagal. Silakan periksa kembali.";
+
+                button.disabled = false;
+                button.innerHTML = originalButtonHTML;
+
+                passwordInput.value = "";
+                passwordInput.focus();
+
+                processing = false;
+            }
+
+        });
+
+    });
+    </script>
+
+</body>
+</html>
